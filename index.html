@@ -58,6 +58,9 @@
         .row > div {
             flex: 1;
         }
+        .hidden {
+            display: none !important;
+        }
         button.btn-generate {
             margin-top: 25px;
             background: #0d346d;
@@ -104,7 +107,7 @@
 
 <div class="card">
     <h2>Créer un encart pliable</h2>
-    <p class="subtitle">Collez votre code d'intégration (iframe, graphique, tableau...), choisissez le type de contenu et copiez le résultat.</p>
+    <p class="subtitle">Choisissez le type de contenu, renseignez les informations demandées et copiez le code généré.</p>
 
     <div class="row">
         <div>
@@ -117,16 +120,25 @@
         </div>
     </div>
 
-    <label for="embedCode">2. Collez le code HTML à intégrer (&lt;iframe...&gt; ou script)</label>
-    <textarea class="input-code" id="embedCode" placeholder='<iframe src="https://..." width="100%" height="600"></iframe>'></textarea>
+    <!-- ZONE SPÉCIFIQUE PODCAST -->
+    <div id="zonePodcast" class="hidden">
+        <label for="podcastId">2. Numéro du player podcast (ID Saooti)</label>
+        <input type="text" id="podcastId" placeholder="Ex : 3123821">
+    </div>
+
+    <!-- ZONE CLASSIQUE (IFRAME / CODE HTML) -->
+    <div id="zoneHtml">
+        <label for="embedCode">2. Collez le code HTML à intégrer (&lt;iframe...&gt; ou script)</label>
+        <textarea class="input-code" id="embedCode" placeholder='<iframe src="https://..." width="100%" height="600"></iframe>'></textarea>
+    </div>
 
     <div class="row">
-        <div>
+        <div id="blocHauteur">
             <label for="hauteurInput">3. Hauteur max (en pixels)</label>
             <input type="number" id="hauteurInput" value="650">
         </div>
         <div>
-            <label for="sourceUrl">4. Lien source en bas (optionnel)</label>
+            <label for="sourceUrl" id="labelSource">4. Lien en bas (optionnel)</label>
             <input type="text" id="sourceUrl" placeholder="https://... (laisser vide pour masquer)">
         </div>
     </div>
@@ -142,17 +154,22 @@
     // CONFIGURATION : Ajoutez, modifiez ou supprimez vos options ici facilement
     // =========================================================================
     const OPTIONS_DISPONIBLES = [
-        { emoji: "📊", label: "Consulter le tableau", hauteur: 650 },
-        { emoji: "📈", label: "Voir le graphique", hauteur: 500 },
-        { emoji: "📄", label: "Lire le document", hauteur: 700 },
-        { emoji: "🗺️", label: "Explorer la carte", hauteur: 550 },
-        { emoji: "🎬", label: "Voir la vidéo", hauteur: 420 }
+        { type: "podcast", emoji: "🎧", label: "Écouter l'article", hauteur: 140, lienDefaut: "https://l.linforme.com/podcast", texteLien: "Découvrez comment écouter tous nos Audios" },
+        { type: "html",    emoji: "📊", label: "Consulter le tableau", hauteur: 650 },
+        { type: "html",    emoji: "📈", label: "Voir le graphique", hauteur: 500 },
+        { type: "html",    emoji: "📄", label: "Lire le document", hauteur: 700 },
+        { type: "html",    emoji: "🗺️", label: "Explorer la carte", hauteur: 550 }
     ];
     // =========================================================================
 
     const selectEl = document.getElementById('typeSelect');
     const titleInput = document.getElementById('customTitle');
     const hauteurInput = document.getElementById('hauteurInput');
+    const sourceUrlInput = document.getElementById('sourceUrl');
+    const zonePodcast = document.getElementById('zonePodcast');
+    const zoneHtml = document.getElementById('zoneHtml');
+    const blocHauteur = document.getElementById('blocHauteur');
+    const labelSource = document.getElementById('labelSource');
 
     // Remplissage automatique du menu déroulant au chargement
     OPTIONS_DISPONIBLES.forEach((opt, index) => {
@@ -162,11 +179,25 @@
         selectEl.appendChild(option);
     });
 
-    // Met à jour le titre et la hauteur conseillée quand on change d'option
+    // Adapte l'interface selon le choix (Podcast vs Code HTML)
     function mettreAJourChamps() {
         const choix = OPTIONS_DISPONIBLES[selectEl.value];
         titleInput.value = choix.label;
         hauteurInput.value = choix.hauteur;
+
+        if (choix.type === 'podcast') {
+            zonePodcast.classList.remove('hidden');
+            zoneHtml.classList.add('hidden');
+            blocHauteur.classList.add('hidden'); // Hauteur fixe à 140px pour le lecteur
+            labelSource.textContent = "3. Lien en bas du lecteur";
+            sourceUrlInput.value = choix.lienDefaut || "";
+        } else {
+            zonePodcast.classList.add('hidden');
+            zoneHtml.classList.remove('hidden');
+            blocHauteur.classList.remove('hidden');
+            labelSource.textContent = "4. Lien source en bas (optionnel)";
+            sourceUrlInput.value = "";
+        }
     }
 
     // Initialisation au premier chargement
@@ -176,43 +207,55 @@
         const choix = OPTIONS_DISPONIBLES[selectEl.value];
         const emoji = choix.emoji;
         const titre = titleInput.value.trim() || choix.label;
-        const rawEmbed = document.getElementById('embedCode').value.trim();
         const hauteur = parseInt(hauteurInput.value) || 600;
-        let sourceUrl = document.getElementById('sourceUrl').value.trim();
+        let sourceUrl = sourceUrlInput.value.trim();
+        let texteLien = choix.texteLien || "Ouvrir la source dans un nouvel onglet ↗";
+        let cleanEmbed = "";
 
-        if (!rawEmbed) {
-            alert("⚠️ Veuillez coller un code HTML dans la case n°2.");
-            return;
-        }
+        // CAS 1 : PODCAST (construction automatique de l'iframe Saooti)
+        if (choix.type === 'podcast') {
+            const podId = document.getElementById('podcastId').value.trim();
+            if (!podId) {
+                alert("⚠️ Veuillez saisir le numéro du player podcast (ex: 3123821).");
+                return;
+            }
+            cleanEmbed = `<iframe src="https://playerbeta.octopus.saooti.com/miniplayer/large/${podId}?distributorId=c7ab55a4-10b5-4099-a0bc-3e96362afe9a&color=0d346d&theme=ffffff&article=false&wave=false" width="100%" height="140px" scrolling="no" style="border:none; display:block;" allow="clipboard-read; clipboard-write; autoplay"></iframe>`;
+        } 
+        // CAS 2 : CONTENU HTML / IFRAME LIBRE
+        else {
+            const rawEmbed = document.getElementById('embedCode').value.trim();
+            if (!rawEmbed) {
+                alert("⚠️ Veuillez coller un code HTML dans la case n°2.");
+                return;
+            }
 
-        // Si l'utilisateur n'a pas mis de lien source mais qu'il s'agit d'un DocumentCloud, on le génère auto
-        if (!sourceUrl && rawEmbed.includes('documentcloud.org')) {
-            const match = rawEmbed.match(/src="([^"]+)"/);
-            if (match) {
-                sourceUrl = match[1]
-                    .replace('embed.documentcloud.org', 'www.documentcloud.org')
-                    .replace('/?embed=1', '/');
+            // Détection automatique du lien DocumentCloud si laissé vide
+            if (!sourceUrl && rawEmbed.includes('documentcloud.org')) {
+                const match = rawEmbed.match(/src="([^"]+)"/);
+                if (match) {
+                    sourceUrl = match[1]
+                        .replace('embed.documentcloud.org', 'www.documentcloud.org')
+                        .replace('/?embed=1', '/');
+                }
+            }
+
+            cleanEmbed = rawEmbed;
+            if (cleanEmbed.startsWith('<iframe')) {
+                cleanEmbed = cleanEmbed
+                    .replace(/\swidth="[^"]*"/gi, '')
+                    .replace(/\sheight="[^"]*"/gi, '')
+                    .replace('<iframe', `<iframe style="width:100%; height:${hauteur}px; border:none; display:block;"`);
             }
         }
 
-        // Nettoyage léger si c'est une iframe pour forcer la largeur 100% et la hauteur choisie
-        let cleanEmbed = rawEmbed;
-        if (cleanEmbed.startsWith('<iframe')) {
-            // Supprime les attributs width/height codés en dur pour éviter les débordements
-            cleanEmbed = cleanEmbed
-                .replace(/\swidth="[^"]*"/gi, '')
-                .replace(/\sheight="[^"]*"/gi, '')
-                .replace('<iframe', `<iframe style="width:100%; height:${hauteur}px; border:none; display:block;"`);
-        }
-
-        // Bloc pied de page uniquement si un lien source est présent
+        // Bloc pied de page si un lien est renseigné
         const footerHTML = sourceUrl 
-            ? `<div class="encart-footer"><a href="${sourceUrl}" target="_blank" rel="noopener">Ouvrir la source dans un nouvel onglet ↗</a></div>` 
+            ? `<div class="encart-footer"><a href="${sourceUrl}" target="_blank" rel="noopener">${texteLien}</a></div>` 
             : '';
 
-        // ID unique pour éviter tout conflit si plusieurs blocs sont sur la même page
         const uid = 'encart_' + Math.floor(Math.random() * 1000000);
         const titreEchappe = titre.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const texteFermer = choix.type === 'podcast' ? 'Masquer le lecteur' : 'Masquer';
 
         const codeFinal = `<!-- DÉBUT ENCART PLIABLE -->
 <style>
@@ -229,7 +272,7 @@
     #${uid} .encart-footer a:hover { text-decoration: underline; }
 </style>
 <div id="${uid}">
-    <button class="toggle-btn" onclick="const w = this.nextElementSibling; const open = w.classList.toggle('show'); this.classList.toggle('active', open); this.querySelector('.txt').textContent = open ? 'Masquer' : '${titreEchappe}';">
+    <button class="toggle-btn" onclick="const w = this.nextElementSibling; const open = w.classList.toggle('show'); this.classList.toggle('active', open); this.querySelector('.txt').textContent = open ? '${texteFermer}' : '${titreEchappe}';">
         <span>${emoji}</span>
         <span class="txt">${titre}</span>
     </button>
