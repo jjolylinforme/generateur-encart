@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'encart pliable</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 680px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f4f6f9;
+            color: #333;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+        h2 {
+            margin-top: 0;
+            color: #0d346d;
+            font-size: 22px;
+        }
+        p.subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin: 18px 0 6px;
+            font-size: 14px;
+            color: #222;
+        }
+        select, input, textarea.input-code {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        textarea.input-code {
+            height: 110px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+        .row > div {
+            flex: 1;
+        }
+        button.btn-generate {
+            margin-top: 25px;
+            background: #0d346d;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        button.btn-generate:hover {
+            background: #0a2850;
+        }
+        .success {
+            background: #d1e7dd;
+            color: #0f5132;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: none;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+        textarea.output-code {
+            width: 100%;
+            height: 100px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            color: #555;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Créer un encart pliable</h2>
+    <p class="subtitle">Collez votre code d'intégration (iframe, graphique, tableau...), choisissez le type de contenu et copiez le résultat.</p>
+
+    <div class="row">
+        <div>
+            <label for="typeSelect">1. Type de contenu</label>
+            <select id="typeSelect" onchange="mettreAJourChamps()"></select>
+        </div>
+        <div>
+            <label for="customTitle">Texte du bouton (modifiable)</label>
+            <input type="text" id="customTitle">
+        </div>
+    </div>
+
+    <label for="embedCode">2. Collez le code HTML à intégrer (&lt;iframe...&gt; ou script)</label>
+    <textarea class="input-code" id="embedCode" placeholder='<iframe src="https://..." width="100%" height="600"></iframe>'></textarea>
+
+    <div class="row">
+        <div>
+            <label for="hauteurInput">3. Hauteur max (en pixels)</label>
+            <input type="number" id="hauteurInput" value="650">
+        </div>
+        <div>
+            <label for="sourceUrl">4. Lien source en bas (optionnel)</label>
+            <input type="text" id="sourceUrl" placeholder="https://... (laisser vide pour masquer)">
+        </div>
+    </div>
+
+    <button class="btn-generate" onclick="genererEtCopier()">Générer et copier le code</button>
+    <div class="success" id="msgSuccess">✅ Code copié dans le presse-papier ! Il ne reste plus qu'à le coller dans l'article.</div>
+
+    <textarea class="output-code" id="resultat" readonly placeholder="Le code généré apparaîtra ici..."></textarea>
+</div>
+
+<script>
+    // =========================================================================
+    // CONFIGURATION : Ajoutez, modifiez ou supprimez vos options ici facilement
+    // =========================================================================
+    const OPTIONS_DISPONIBLES = [
+        { emoji: "📊", label: "Consulter le tableau", hauteur: 650 },
+        { emoji: "📈", label: "Voir le graphique", hauteur: 500 },
+        { emoji: "📄", label: "Lire le document", hauteur: 700 },
+        { emoji: "🗺️", label: "Explorer la carte", hauteur: 550 },
+        { emoji: "🎬", label: "Voir la vidéo", hauteur: 420 }
+    ];
+    // =========================================================================
+
+    const selectEl = document.getElementById('typeSelect');
+    const titleInput = document.getElementById('customTitle');
+    const hauteurInput = document.getElementById('hauteurInput');
+
+    // Remplissage automatique du menu déroulant au chargement
+    OPTIONS_DISPONIBLES.forEach((opt, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${opt.emoji} ${opt.label}`;
+        selectEl.appendChild(option);
+    });
+
+    // Met à jour le titre et la hauteur conseillée quand on change d'option
+    function mettreAJourChamps() {
+        const choix = OPTIONS_DISPONIBLES[selectEl.value];
+        titleInput.value = choix.label;
+        hauteurInput.value = choix.hauteur;
+    }
+
+    // Initialisation au premier chargement
+    mettreAJourChamps();
+
+    function genererEtCopier() {
+        const choix = OPTIONS_DISPONIBLES[selectEl.value];
+        const emoji = choix.emoji;
+        const titre = titleInput.value.trim() || choix.label;
+        const rawEmbed = document.getElementById('embedCode').value.trim();
+        const hauteur = parseInt(hauteurInput.value) || 600;
+        let sourceUrl = document.getElementById('sourceUrl').value.trim();
+
+        if (!rawEmbed) {
+            alert("⚠️ Veuillez coller un code HTML dans la case n°2.");
+            return;
+        }
+
+        // Si l'utilisateur n'a pas mis de lien source mais qu'il s'agit d'un DocumentCloud, on le génère auto
+        if (!sourceUrl && rawEmbed.includes('documentcloud.org')) {
+            const match = rawEmbed.match(/src="([^"]+)"/);
+            if (match) {
+                sourceUrl = match[1]
+                    .replace('embed.documentcloud.org', 'www.documentcloud.org')
+                    .replace('/?embed=1', '/');
+            }
+        }
+
+        // Nettoyage léger si c'est une iframe pour forcer la largeur 100% et la hauteur choisie
+        let cleanEmbed = rawEmbed;
+        if (cleanEmbed.startsWith('<iframe')) {
+            // Supprime les attributs width/height codés en dur pour éviter les débordements
+            cleanEmbed = cleanEmbed
+                .replace(/\swidth="[^"]*"/gi, '')
+                .replace(/\sheight="[^"]*"/gi, '')
+                .replace('<iframe', `<iframe style="width:100%; height:${hauteur}px; border:none; display:block;"`);
+        }
+
+        // Bloc pied de page uniquement si un lien source est présent
+        const footerHTML = sourceUrl 
+            ? `<div class="encart-footer"><a href="${sourceUrl}" target="_blank" rel="noopener">Ouvrir la source dans un nouvel onglet ↗</a></div>` 
+            : '';
+
+        // ID unique pour éviter tout conflit si plusieurs blocs sont sur la même page
+        const uid = 'encart_' + Math.floor(Math.random() * 1000000);
+        const titreEchappe = titre.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+        const codeFinal = `<!-- DÉBUT ENCART PLIABLE -->
+<style>
+    #${uid} { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 16px 0; }
+    #${uid} .toggle-btn { width: 100%; padding: 10px 12px; background: #0d346d; color: white; border: none; cursor: pointer; font-size: 14px; font-weight: 500; text-align: left; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+    #${uid} .toggle-btn:hover { background: #0a2850; }
+    #${uid} .toggle-btn.active { border-bottom: 1px solid #e0e0e0; }
+    #${uid} .encart-wrapper { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; background: white; visibility: hidden; }
+    #${uid} .encart-wrapper.show { max-height: ${hauteur + 150}px; visibility: visible; }
+    #${uid} .encart-content { pointer-events: none; }
+    #${uid} .encart-wrapper.show .encart-content { pointer-events: auto; }
+    #${uid} .encart-footer { padding: 12px 20px; font-size: 13px; color: #333; border-top: 1px solid #e0e0e0; background: #f8f9fa; }
+    #${uid} .encart-footer a { color: #0d346d; font-weight: 500; text-decoration: none; }
+    #${uid} .encart-footer a:hover { text-decoration: underline; }
+</style>
+<div id="${uid}">
+    <button class="toggle-btn" onclick="const w = this.nextElementSibling; const open = w.classList.toggle('show'); this.classList.toggle('active', open); this.querySelector('.txt').textContent = open ? 'Masquer' : '${titreEchappe}';">
+        <span>${emoji}</span>
+        <span class="txt">${titre}</span>
+    </button>
+    <div class="encart-wrapper">
+        <div class="encart-content">${cleanEmbed}</div>
+        ${footerHTML}
+    </div>
+</div>
+<!-- FIN ENCART PLIABLE -->`;
+
+        const textarea = document.getElementById('resultat');
+        textarea.value = codeFinal;
+        textarea.select();
+        navigator.clipboard.writeText(codeFinal);
+
+        const msg = document.getElementById('msgSuccess');
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 4000);
+    }
+</script>
+
+</body>
+</html>
