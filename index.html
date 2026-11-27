@@ -145,17 +145,35 @@ function genererEtCopier() {
     var titreEchappe = titre.replace(/'/g, "\\'").replace(/"/g, '&quot;');
     var texteFermer = (type === 'podcast') ? 'Masquer le lecteur' : 'Masquer';
 
-    var mobileHelperHTML = (sourceUrl && type !== 'podcast')
-        ? '<div class="encart-mobile-bar"><span>📱 Affichage réduit sur mobile</span><a href="' + sourceUrl + '" target="_blank" rel="noopener">Agrandir ↗</a></div>'
+    // Barre mobile avec bouton plein écran interne (sans quitter le site)
+    var mobileHelperHTML = (type !== 'podcast')
+        ? '<div class="encart-mobile-bar">' +
+            '<span class="mb-label">📱 Vue réduite</span>' +
+            '<button type="button" class="mb-fs-btn" onclick="var c = document.getElementById(\'' + uid + '\'); var isFs = c.classList.toggle(\'is-fullscreen\'); document.body.style.overflow = isFs ? \'hidden\' : \'\'; this.textContent = isFs ? \'✕ Fermer le plein écran\' : \'⛶ Agrandir\'; this.previousElementSibling.textContent = isFs ? \'' + titreEchappe + '\' : \'📱 Vue réduite\';">⛶ Agrandir</button>' +
+          '</div>'
         : '';
 
     var footerHTML = sourceUrl
         ? '<div class="encart-footer"><a href="' + sourceUrl + '" target="_blank" rel="noopener">' + texteLien + '</a></div>'
         : '';
 
-    var mobileHeightCSS = (type === 'podcast')
+    // Règles CSS spécifiques au mobile : hauteur adaptée, lien du bas conservé hors plein écran, et mode plein écran interne
+    var mobileCSS = (type === 'podcast')
         ? ''
-        : '@media (max-width: 640px) { #' + uid + ' .encart-wrapper.show { max-height: 85vh; } #' + uid + ' .encart-iframe { height: 70vh !important; } #' + uid + ' .encart-mobile-bar { display: flex; } }';
+        : '@media (max-width: 640px) {\n' +
+          '  #' + uid + ' .encart-wrapper.show { max-height: 85vh; }\n' +
+          '  #' + uid + ' .encart-iframe { height: 65vh !important; }\n' +
+          '  #' + uid + ' .encart-mobile-bar { display: flex; }\n' +
+          '}\n' +
+          '#' + uid + '.is-fullscreen { position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100dvh !important; z-index: 999999 !important; margin: 0 !important; border-radius: 0 !important; border: none !important; display: flex !important; flex-direction: column !important; background: #fff !important; }\n' +
+          '#' + uid + '.is-fullscreen .toggle-btn { display: none !important; }\n' +
+          '#' + uid + '.is-fullscreen .encart-wrapper { max-height: none !important; flex: 1 !important; display: flex !important; flex-direction: column !important; visibility: visible !important; }\n' +
+          '#' + uid + '.is-fullscreen .encart-mobile-bar { display: flex !important; background: #0d346d !important; color: #fff !important; padding: 12px 16px !important; border-bottom: none !important; }\n' +
+          '#' + uid + '.is-fullscreen .mb-label { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }\n' +
+          '#' + uid + '.is-fullscreen .mb-fs-btn { background: #fff !important; color: #0d346d !important; padding: 6px 12px !important; font-size: 13px !important; }\n' +
+          '#' + uid + '.is-fullscreen .encart-content { flex: 1 !important; pointer-events: auto !important; height: 100% !important; }\n' +
+          '#' + uid + '.is-fullscreen .encart-iframe { height: 100% !important; }\n' +
+          '#' + uid + '.is-fullscreen .encart-footer { display: none !important; }';
 
     var codeFinal = '<!-- DÉBUT ENCART PLIABLE -->\n' +
         '<style>\n' +
@@ -169,14 +187,14 @@ function genererEtCopier() {
         '#' + uid + ' .encart-wrapper.show .encart-content { pointer-events: auto; }\n' +
         '#' + uid + ' .encart-iframe { width: 100%; height: ' + hauteur + 'px; border: none; display: block; }\n' +
         '#' + uid + ' .encart-mobile-bar { display: none; justify-content: space-between; align-items: center; padding: 8px 12px; background: #eef3f9; border-bottom: 1px solid #d0dceb; font-size: 12px; color: #0d346d; }\n' +
-        '#' + uid + ' .encart-mobile-bar a { background: #0d346d; color: white; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 12px; }\n' +
+        '#' + uid + ' .mb-fs-btn { background: #0d346d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; font-family: inherit; }\n' +
         '#' + uid + ' .encart-footer { padding: 12px 20px; font-size: 13px; color: #333; border-top: 1px solid #e0e0e0; background: #f8f9fa; }\n' +
         '#' + uid + ' .encart-footer a { color: #0d346d; font-weight: 500; text-decoration: none; }\n' +
         '#' + uid + ' .encart-footer a:hover { text-decoration: underline; }\n' +
-        mobileHeightCSS + '\n' +
+        mobileCSS + '\n' +
         '</style>\n' +
         '<div id="' + uid + '">\n' +
-        '    <button class="toggle-btn" onclick="var w = this.nextElementSibling; var open = w.classList.toggle(\'show\'); this.classList.toggle(\'active\', open); this.querySelector(\'.txt\').textContent = open ? \'' + texteFermer + '\' : \'' + titreEchappe + '\';">\n' +
+        '    <button type="button" class="toggle-btn" onclick="var w = this.nextElementSibling; var open = w.classList.toggle(\'show\'); this.classList.toggle(\'active\', open); this.querySelector(\'.txt\').textContent = open ? \'' + texteFermer + '\' : \'' + titreEchappe + '\';">\n' +
         '        <span>' + emoji + '</span>\n' +
         '        <span class="txt">' + titre + '</span>\n' +
         '    </button>\n' +
