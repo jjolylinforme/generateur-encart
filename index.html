@@ -5,217 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Générateur d'encart pliable</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 680px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f4f6f9;
-            color: #333;
-        }
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-        }
-        h2 {
-            margin-top: 0;
-            color: #0d346d;
-            font-size: 22px;
-        }
-        p.subtitle {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
-        label {
-            display: block;
-            font-weight: 600;
-            margin: 18px 0 6px;
-            font-size: 14px;
-            color: #222;
-        }
-        select, input, textarea.input-code {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-            font-family: inherit;
-        }
-        textarea.input-code {
-            height: 110px;
-            font-family: monospace;
-            font-size: 12px;
-            resize: vertical;
-        }
-        .row {
-            display: flex;
-            gap: 15px;
-        }
-        .row > div {
-            flex: 1;
-        }
-        .hidden {
-            display: none !important;
-        }
-        button.btn-generate {
-            margin-top: 25px;
-            background: #0d346d;
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            border-radius: 6px;
-            font-size: 15px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        button.btn-generate:hover {
-            background: #0a2850;
-        }
-        .success {
-            background: #d1e7dd;
-            color: #0f5132;
-            padding: 12px;
-            border-radius: 6px;
-            font-weight: 500;
-            display: none;
-            margin-top: 15px;
-            text-align: center;
-            font-size: 14px;
-        }
-        textarea.output-code {
-            width: 100%;
-            height: 100px;
-            margin-top: 15px;
-            font-family: monospace;
-            font-size: 12px;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            background: #f8f9fa;
-            color: #555;
-            box-sizing: border-box;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 680px; margin: 40px auto; padding: 20px; background: #f4f6f9; color: #333; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+        h2 { margin-top: 0; color: #0d346d; font-size: 22px; }
+        p.subtitle { color: #666; font-size: 14px; margin-bottom: 25px; }
+        label { display: block; font-weight: 600; margin: 18px 0 6px; font-size: 14px; color: #222; }
+        select, input, textarea.input-code { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+        textarea.input-code { height: 110px; font-family: monospace; font-size: 12px; resize: vertical; }
+        .row { display: flex; gap: 15px; }
+        .row > div { flex: 1; }
+        .hidden { display: none !important; }
+        button.btn-generate { margin-top: 25px; background: #0d346d; color: white; border: none; padding: 14px 20px; border-radius: 6px; font-size: 15px; cursor: pointer; width: 100%; font-weight: 600; }
+        button.btn-generate:hover { background: #0a2850; }
+        .success { background: #d1e7dd; color: #0f5132; padding: 12px; border-radius: 6px; font-weight: 500; display: none; margin-top: 15px; text-align: center; font-size: 14px; }
+        textarea.output-code { width: 100%; height: 100px; margin-top: 15px; font-family: monospace; font-size: 12px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; background: #f8f9fa; color: #555; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>Créer un encart pliable</h2>
-    <p class="subtitle">Choisissez le type de contenu, renseignez les informations demandées et copiez le code généré.</p>
+    <p class="subtitle">Choisissez le type de contenu, renseignez les informations et copiez le code généré.</p>
 
     <div class="row">
         <div>
             <label for="typeSelect">1. Type de contenu</label>
-            <select id="typeSelect" onchange="mettreAJourChamps()"></select>
+            <!-- MODIFIEZ OU AJOUTEZ VOS OPTIONS ICI -->
+            <select id="typeSelect" onchange="mettreAJourChamps()">
+                <option value="podcast" data-emoji="🎧" data-titre="Écouter l'article" data-hauteur="140">🎧 Podcast</option>
+                <option value="html" data-emoji="📊" data-titre="Consulter le tableau" data-hauteur="650" selected>📊 Tableau</option>
+                <option value="html" data-emoji="📈" data-titre="Voir le graphique" data-hauteur="500">📈 Graphique</option>
+                <option value="html" data-emoji="📄" data-titre="Lire le document" data-hauteur="700">📄 Document</option>
+                <option value="html" data-emoji="🗺️" data-titre="Explorer la carte" data-hauteur="550">🗺️ Carte</option>
+            </select>
         </div>
         <div>
             <label for="customTitle">Texte du bouton (modifiable)</label>
-            <input type="text" id="customTitle">
+            <input type="text" id="customTitle" value="Consulter le tableau">
         </div>
     </div>
 
-    <!-- ZONE SPÉCIFIQUE PODCAST -->
+    <!-- ZONE PODCAST -->
     <div id="zonePodcast" class="hidden">
         <label for="podcastId">2. Numéro du player podcast (ID Saooti)</label>
         <input type="text" id="podcastId" placeholder="Ex : 3123821">
     </div>
 
-    <!-- ZONE CLASSIQUE (IFRAME / CODE HTML) -->
+    <!-- ZONE CODE HTML -->
     <div id="zoneHtml">
-        <label for="embedCode">2. Collez le code HTML à intégrer (&lt;iframe...&gt; ou script)</label>
+        <label for="embedCode">2. Collez le code HTML à intégrer (&lt;iframe...&gt;)</label>
         <textarea class="input-code" id="embedCode" placeholder='<iframe src="https://..." width="100%" height="600"></iframe>'></textarea>
     </div>
 
     <div class="row">
         <div id="blocHauteur">
-            <label for="hauteurInput">3. Hauteur ordinateur (en pixels)</label>
+            <label for="hauteurInput">3. Hauteur ordinateur (px)</label>
             <input type="number" id="hauteurInput" value="650">
         </div>
         <div>
             <label for="sourceUrl" id="labelSource">4. Lien en bas (optionnel)</label>
-            <input type="text" id="sourceUrl" placeholder="https://... (laisser vide pour masquer)">
+            <input type="text" id="sourceUrl" placeholder="https://...">
         </div>
     </div>
 
-    <button class="btn-generate" onclick="genererEtCopier()">Générer et copier le code</button>
-    <div class="success" id="msgSuccess">✅ Code copié dans le presse-papier ! Il ne reste plus qu'à le coller dans l'article.</div>
+    <button type="button" class="btn-generate" onclick="genererEtCopier()">Générer et copier le code</button>
+    <div class="success" id="msgSuccess">✅ Code copié ! Vous pouvez le coller dans votre article.</div>
 
     <textarea class="output-code" id="resultat" readonly placeholder="Le code généré apparaîtra ici..."></textarea>
 </div>
 
 <script>
-    // =========================================================================
-    // CONFIGURATION : Ajoutez, modifiez ou supprimez vos options ici facilement
-    // =========================================================================
-    const OPTIONS_DISPONIBLES = [
-        { type: "podcast", emoji: "🎧", label: "Écouter l'article", hauteur: 140, lienDefaut: "https://l.linforme.com/podcast", texteLien: "Découvrez comment écouter tous nos Audios" },
-        { type: "html",    emoji: "📊", label: "Consulter le tableau", hauteur: 650 },
-        { type: "html",    emoji: "📈", label: "Voir le graphique", hauteur: 500 },
-        { type: "html",    emoji: "📄", label: "Lire le document", hauteur: 700 },
-        { type: "html",    emoji: "🗺️", label: "Explorer la carte", hauteur: 550 }
-    ];
-    // =========================================================================
+function mettreAJourChamps() {
+    var select = document.getElementById('typeSelect');
+    var opt = select.options[select.selectedIndex];
+    var type = opt.value;
 
-    const selectEl = document.getElementById('typeSelect');
-    const titleInput = document.getElementById('customTitle');
-    const hauteurInput = document.getElementById('hauteurInput');
-    const sourceUrlInput = document.getElementById('sourceUrl');
-    const zonePodcast = document.getElementById('zonePodcast');
-    const zoneHtml = document.getElementById('zoneHtml');
-    const blocHauteur = document.getElementById('blocHauteur');
-    const labelSource = document.getElementById('labelSource');
-
-    // Remplissage automatique du menu déroulant au chargement
-    OPTIONS_DISPONIBLES.forEach((opt, index) => {
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = `${opt.emoji}${opt.label}`;
-        selectEl.appendChild(option);
-    });
-
-    // Adapte l'interface selon le choix (Podcast vs Code HTML)
-    function mettreAJourChamps() {
-        const choix = OPTIONS_DISPONIBLES[selectEl.value];
-        titleInput.value = choix.label;
-        hauteurInput.value = choix.hauteur;
-
-        if (choix.type === 'podcast') {
-            zonePodcast.classList.remove('hidden');
-            zoneHtml.classList.add('hidden');
-            blocHauteur.classList.add('hidden');
-            labelSource.textContent = "3. Lien en bas du lecteur";
-            sourceUrlInput.value = choix.lienDefaut || "";
-        } else {
-            zonePodcast.classList.add('hidden');
-            zoneHtml.classList.remove('hidden');
-            blocHauteur.classList.remove('hidden');
-            labelSource.textContent = "4. Lien source en bas (optionnel)";
-            sourceUrlInput.value = "";
-        }
-    }
-
-    mettreAJourChamps();
-
-    function genererEtCopier() {
-        const choix = OPTIONS_DISPONIBLES[selectEl.value];
-        const emoji = choix.emoji;
-        const titre = titleInput.value.trim() || choix.label;
-        const hauteur = parseInt(hauteurInput.value) || 600;
-        let sourceUrl = sourceUrlInput.value.trim();
-        let texteLien = choix.texteLien || "Ouvrir en plein écran dans un nouvel onglet ↗";
-        let cleanEmbed = "";
-
-        // CAS 1 : PODCAST
-        if (choix.type === 'podcast') {
-            const podId = document.getElementById('podcastId').value.trim();
-            if (!podId) {
-                alert("⚠️ Veuillez saisir le numéro du player podcast (ex: 3123821).");
-                return;
-            }
-            cleanEmbed = `<iframe src="
+    document.getElementById('customTitle').value = opt.getAttribute('data-
