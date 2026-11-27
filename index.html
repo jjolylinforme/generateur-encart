@@ -134,7 +134,7 @@
 
     <div class="row">
         <div id="blocHauteur">
-            <label for="hauteurInput">3. Hauteur max (en pixels)</label>
+            <label for="hauteurInput">3. Hauteur ordinateur (en pixels)</label>
             <input type="number" id="hauteurInput" value="650">
         </div>
         <div>
@@ -188,7 +188,7 @@
         if (choix.type === 'podcast') {
             zonePodcast.classList.remove('hidden');
             zoneHtml.classList.add('hidden');
-            blocHauteur.classList.add('hidden'); // Hauteur fixe à 140px pour le lecteur
+            blocHauteur.classList.add('hidden');
             labelSource.textContent = "3. Lien en bas du lecteur";
             sourceUrlInput.value = choix.lienDefaut || "";
         } else {
@@ -200,7 +200,6 @@
         }
     }
 
-    // Initialisation au premier chargement
     mettreAJourChamps();
 
     function genererEtCopier() {
@@ -209,10 +208,10 @@
         const titre = titleInput.value.trim() || choix.label;
         const hauteur = parseInt(hauteurInput.value) || 600;
         let sourceUrl = sourceUrlInput.value.trim();
-        let texteLien = choix.texteLien || "Ouvrir la source dans un nouvel onglet ↗";
+        let texteLien = choix.texteLien || "Ouvrir en plein écran dans un nouvel onglet ↗";
         let cleanEmbed = "";
 
-        // CAS 1 : PODCAST (construction automatique de l'iframe Saooti)
+        // CAS 1 : PODCAST
         if (choix.type === 'podcast') {
             const podId = document.getElementById('podcastId').value.trim();
             if (!podId) {
@@ -241,17 +240,33 @@
 
             cleanEmbed = rawEmbed;
             if (cleanEmbed.startsWith('<iframe')) {
+                // On retire les dimensions fixes pour laisser le CSS responsive gérer Desktop & Mobile
                 cleanEmbed = cleanEmbed
                     .replace(/\swidth="[^"]*"/gi, '')
                     .replace(/\sheight="[^"]*"/gi, '')
-                    .replace('<iframe', `<iframe style="width:100%; height:${hauteur}px; border:none; display:block;"`);
+                    .replace(/\sstyle="[^"]*"/gi, '')
+                    .replace('<iframe', `<iframe class="encart-iframe"`);
             }
         }
 
-        // Bloc pied de page si un lien est renseigné
+        // Bandeau d'aide spécifique au mobile si un lien source existe (pour les tableaux/docs)
+        const mobileHelperHTML = (sourceUrl && choix.type !== 'podcast')
+            ? `<div class="encart-mobile-bar"><span>📱 Affichage réduit sur mobile</span><a href="${sourceUrl}" target="_blank" rel="noopener">Agrandir ↗</a></div>`
+            : '';
+
+        // Pied de page classique
         const footerHTML = sourceUrl 
             ? `<div class="encart-footer"><a href="${sourceUrl}" target="_blank" rel="noopener">${texteLien}</a></div>` 
             : '';
+
+        // Règles CSS responsive : sur mobile, on limite la hauteur à 75% de l'écran (sauf pour le podcast)
+        const mobileHeightCSS = choix.type === 'podcast'
+            ? ''
+            : `@media (max-width: 640px) {
+                #${uid} .encart-wrapper.show { max-height: 85vh; }
+                #${uid} .encart-iframe { height: 70vh !important; }
+                #${uid} .encart-mobile-bar { display: flex; }
+               }`;
 
         const uid = 'encart_' + Math.floor(Math.random() * 1000000);
         const titreEchappe = titre.replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -264,12 +279,16 @@
     #${uid} .toggle-btn:hover { background: #0a2850; }
     #${uid} .toggle-btn.active { border-bottom: 1px solid #e0e0e0; }
     #${uid} .encart-wrapper { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; background: white; visibility: hidden; }
-    #${uid} .encart-wrapper.show { max-height: ${hauteur + 150}px; visibility: visible; }
-    #${uid} .encart-content { pointer-events: none; }
+    #${uid} .encart-wrapper.show { max-height: ${hauteur + 180}px; visibility: visible; }
+    #${uid} .encart-content { pointer-events: none; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     #${uid} .encart-wrapper.show .encart-content { pointer-events: auto; }
+    #${uid} .encart-iframe { width: 100%; height: ${hauteur}px; border: none; display: block; }
+    #${uid} .encart-mobile-bar { display: none; justify-content: space-between; align-items: center; padding: 8px 12px; background: #eef3f9; border-bottom: 1px solid #d0dceb; font-size: 12px; color: #0d346d; }
+    #${uid} .encart-mobile-bar a { background: #0d346d; color: white; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 12px; }
     #${uid} .encart-footer { padding: 12px 20px; font-size: 13px; color: #333; border-top: 1px solid #e0e0e0; background: #f8f9fa; }
     #${uid} .encart-footer a { color: #0d346d; font-weight: 500; text-decoration: none; }
     #${uid} .encart-footer a:hover { text-decoration: underline; }
+    ${mobileHeightCSS}
 </style>
 <div id="${uid}">
     <button class="toggle-btn" onclick="const w = this.nextElementSibling; const open = w.classList.toggle('show'); this.classList.toggle('active', open); this.querySelector('.txt').textContent = open ? '${texteFermer}' : '${titreEchappe}';">
@@ -277,6 +296,7 @@
         <span class="txt">${titre}</span>
     </button>
     <div class="encart-wrapper">
+        ${mobileHelperHTML}
         <div class="encart-content">${cleanEmbed}</div>
         ${footerHTML}
     </div>
