@@ -80,4 +80,129 @@ function mettreAJourChamps() {
     var opt = select.options[select.selectedIndex];
     var type = opt.value;
 
-    document.getElementById('customTitle').value = opt.getAttribute('data-
+    document.getElementById('customTitle').value = opt.getAttribute('data-titre');
+    document.getElementById('hauteurInput').value = opt.getAttribute('data-hauteur');
+
+    if (type === 'podcast') {
+        document.getElementById('zonePodcast').classList.remove('hidden');
+        document.getElementById('zoneHtml').classList.add('hidden');
+        document.getElementById('blocHauteur').classList.add('hidden');
+        document.getElementById('labelSource').textContent = "3. Lien en bas du lecteur";
+        document.getElementById('sourceUrl').value = "https://l.linforme.com/podcast";
+    } else {
+        document.getElementById('zonePodcast').classList.add('hidden');
+        document.getElementById('zoneHtml').classList.remove('hidden');
+        document.getElementById('blocHauteur').classList.remove('hidden');
+        document.getElementById('labelSource').textContent = "4. Lien source en bas (optionnel)";
+        document.getElementById('sourceUrl').value = "";
+    }
+}
+
+function genererEtCopier() {
+    var select = document.getElementById('typeSelect');
+    var opt = select.options[select.selectedIndex];
+    var type = opt.value;
+    var emoji = opt.getAttribute('data-emoji');
+    var titre = document.getElementById('customTitle').value.trim() || opt.getAttribute('data-titre');
+    var hauteur = parseInt(document.getElementById('hauteurInput').value, 10) || 600;
+    var sourceUrl = document.getElementById('sourceUrl').value.trim();
+    var cleanEmbed = "";
+    var texteLien = "Ouvrir en plein écran dans un nouvel onglet ↗";
+
+    if (type === 'podcast') {
+        var podId = document.getElementById('podcastId').value.trim();
+        if (!podId) {
+            alert("Veuillez saisir le numéro du player podcast (ex: 3123821).");
+            return;
+        }
+        texteLien = "Découvrez comment écouter tous nos Audios";
+        cleanEmbed = '<iframe src="https://playerbeta.octopus.saooti.com/miniplayer/large/' + podId + '?distributorId=c7ab55a4-10b5-4099-a0bc-3e96362afe9a&color=0d346d&theme=ffffff&article=false&wave=false" width="100%" height="140px" scrolling="no" style="border:none; display:block;" allow="clipboard-read; clipboard-write; autoplay"></iframe>';
+    } else {
+        var rawEmbed = document.getElementById('embedCode').value.trim();
+        if (!rawEmbed) {
+            alert("Veuillez coller un code HTML dans la case n°2.");
+            return;
+        }
+
+        if (!sourceUrl && rawEmbed.indexOf('documentcloud.org') !== -1) {
+            var match = rawEmbed.match(/src="([^"]+)"/);
+            if (match) {
+                sourceUrl = match[1].replace('embed.documentcloud.org', 'www.documentcloud.org').replace('/?embed=1', '/');
+            }
+        }
+
+        cleanEmbed = rawEmbed;
+        if (cleanEmbed.indexOf('<iframe') === 0) {
+            cleanEmbed = cleanEmbed
+                .replace(/\swidth="[^"]*"/gi, '')
+                .replace(/\sheight="[^"]*"/gi, '')
+                .replace(/\sstyle="[^"]*"/gi, '')
+                .replace('<iframe', '<iframe class="encart-iframe"');
+        }
+    }
+
+    var uid = 'encart_' + Math.floor(Math.random() * 1000000);
+    var titreEchappe = titre.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    var texteFermer = (type === 'podcast') ? 'Masquer le lecteur' : 'Masquer';
+
+    var mobileHelperHTML = (sourceUrl && type !== 'podcast')
+        ? '<div class="encart-mobile-bar"><span>📱 Affichage réduit sur mobile</span><a href="' + sourceUrl + '" target="_blank" rel="noopener">Agrandir ↗</a></div>'
+        : '';
+
+    var footerHTML = sourceUrl
+        ? '<div class="encart-footer"><a href="' + sourceUrl + '" target="_blank" rel="noopener">' + texteLien + '</a></div>'
+        : '';
+
+    var mobileHeightCSS = (type === 'podcast')
+        ? ''
+        : '@media (max-width: 640px) { #' + uid + ' .encart-wrapper.show { max-height: 85vh; } #' + uid + ' .encart-iframe { height: 70vh !important; } #' + uid + ' .encart-mobile-bar { display: flex; } }';
+
+    var codeFinal = '<!-- DÉBUT ENCART PLIABLE -->\n' +
+        '<style>\n' +
+        '#' + uid + ' { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 16px 0; }\n' +
+        '#' + uid + ' .toggle-btn { width: 100%; padding: 10px 12px; background: #0d346d; color: white; border: none; cursor: pointer; font-size: 14px; font-weight: 500; text-align: left; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }\n' +
+        '#' + uid + ' .toggle-btn:hover { background: #0a2850; }\n' +
+        '#' + uid + ' .toggle-btn.active { border-bottom: 1px solid #e0e0e0; }\n' +
+        '#' + uid + ' .encart-wrapper { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; background: white; visibility: hidden; }\n' +
+        '#' + uid + ' .encart-wrapper.show { max-height: ' + (hauteur + 180) + 'px; visibility: visible; }\n' +
+        '#' + uid + ' .encart-content { pointer-events: none; overflow-x: auto; -webkit-overflow-scrolling: touch; }\n' +
+        '#' + uid + ' .encart-wrapper.show .encart-content { pointer-events: auto; }\n' +
+        '#' + uid + ' .encart-iframe { width: 100%; height: ' + hauteur + 'px; border: none; display: block; }\n' +
+        '#' + uid + ' .encart-mobile-bar { display: none; justify-content: space-between; align-items: center; padding: 8px 12px; background: #eef3f9; border-bottom: 1px solid #d0dceb; font-size: 12px; color: #0d346d; }\n' +
+        '#' + uid + ' .encart-mobile-bar a { background: #0d346d; color: white; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 12px; }\n' +
+        '#' + uid + ' .encart-footer { padding: 12px 20px; font-size: 13px; color: #333; border-top: 1px solid #e0e0e0; background: #f8f9fa; }\n' +
+        '#' + uid + ' .encart-footer a { color: #0d346d; font-weight: 500; text-decoration: none; }\n' +
+        '#' + uid + ' .encart-footer a:hover { text-decoration: underline; }\n' +
+        mobileHeightCSS + '\n' +
+        '</style>\n' +
+        '<div id="' + uid + '">\n' +
+        '    <button class="toggle-btn" onclick="var w = this.nextElementSibling; var open = w.classList.toggle(\'show\'); this.classList.toggle(\'active\', open); this.querySelector(\'.txt\').textContent = open ? \'' + texteFermer + '\' : \'' + titreEchappe + '\';">\n' +
+        '        <span>' + emoji + '</span>\n' +
+        '        <span class="txt">' + titre + '</span>\n' +
+        '    </button>\n' +
+        '    <div class="encart-wrapper">\n' +
+        '        ' + mobileHelperHTML + '\n' +
+        '        <div class="encart-content">' + cleanEmbed + '</div>\n' +
+        '        ' + footerHTML + '\n' +
+        '    </div>\n' +
+        '</div>\n' +
+        '<!-- FIN ENCART PLIABLE -->';
+
+    var textarea = document.getElementById('resultat');
+    textarea.value = codeFinal;
+    textarea.select();
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(codeFinal);
+    } else {
+        document.execCommand('copy');
+    }
+
+    var msg = document.getElementById('msgSuccess');
+    msg.style.display = 'block';
+    setTimeout(function() { msg.style.display = 'none'; }, 4000);
+}
+</script>
+
+</body>
+</html>
